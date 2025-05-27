@@ -1,5 +1,6 @@
 ﻿using System.Net.Sockets;
 using System.Text;
+
 namespace ConsoleApp1
 {
     internal class Program
@@ -16,10 +17,15 @@ namespace ConsoleApp1
             {
                 string serverMsg = Receive(stream);
                 Console.WriteLine(serverMsg);
-                if (serverMsg.StartsWith("Game over!")) break;
 
-                string input = Console.ReadLine();
-                Send(stream, input);
+                if (serverMsg.Contains("Game ended") || serverMsg.StartsWith("Game over!") || serverMsg.Contains("You win!") || serverMsg.Contains("You lose!") || serverMsg.Contains("Draw!"))
+                    break;
+
+                if (serverMsg.Contains("Enter your move") || serverMsg.Contains("Opponent offers a draw"))
+                {
+                    string input = Console.ReadLine();
+                    Send(stream, input);
+                }
             }
 
             client.Close();
@@ -33,9 +39,17 @@ namespace ConsoleApp1
 
         static string Receive(NetworkStream stream)
         {
+            StringBuilder sb = new StringBuilder();
             byte[] buffer = new byte[256];
-            int bytes = stream.Read(buffer, 0, buffer.Length);
-            return Encoding.UTF8.GetString(buffer, 0, bytes).Trim();
+            int bytes;
+            do
+            {
+                bytes = stream.Read(buffer, 0, buffer.Length);
+                sb.Append(Encoding.UTF8.GetString(buffer, 0, bytes));
+            }
+            while (stream.DataAvailable);
+
+            return sb.ToString().Trim();
         }
     }
 }
